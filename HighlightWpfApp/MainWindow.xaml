@@ -1,0 +1,293 @@
+﻿<Window x:Class="HighlightWpfApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:behaviors="http://schemas.microsoft.com/xaml/behaviors"
+        xmlns:local="clr-namespace:HighlightWpfApp"
+        mc:Ignorable="d"
+        Title="Highlight Text Examples"
+        Height="450" Width="800"
+        MinHeight="100" MinWidth="100">
+    <Window.Resources>
+        <ResourceDictionary>
+            <!--
+            Throwing System.Windows.Markup.XamlParseException
+            Message='Failed to create a 'Type' from the text 'local:HighlightingTextBlock'.' Line number '6' and line position '12'.
+            XamlParseException: Type reference cannot find type named '{clr-namespace:HighlightWpfApp}HighlightingTextBlock'.
+
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes\Generic.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            -->
+            
+            <FrameworkElement x:Key="ProxyElement" DataContext="{Binding}"/>
+            <local:StringToXamlConverter x:Key="StringToXamlConverter"/>
+            <Style x:Key="NoteStyle" TargetType="{x:Type TextBlock}">
+                <Setter Property="Background" Value="AntiqueWhite"/>
+                <Setter Property="TextWrapping" Value="WrapWithOverflow"/>
+            </Style>
+            <Style x:Key="TextBorderStyle" TargetType="{x:Type Border}">
+                <Setter Property="BorderBrush" Value="LightGray"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="2"/>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Window.DataContext>
+        <local:MainViewModel/>
+    </Window.DataContext>
+
+    <DockPanel x:Name="RootElement">
+        <ContentControl Visibility="Collapsed" Content="{StaticResource ProxyElement}"/>
+
+        <ToolBar DockPanel.Dock="Top">
+            <Label>Highlight Text</Label>
+            <TextBox Text="{Binding HighlightText, UpdateSourceTrigger=PropertyChanged, Delay=750}" Width="200"/>
+            <Separator/>
+            <Label>Source Text</Label>
+            <ComboBox
+                DisplayMemberPath="Title"
+                ItemsSource="{Binding Examples}"
+                SelectedItem="{Binding SelectedExample}"
+                />
+        </ToolBar>
+
+        <TabControl x:Name="TabRoot">
+            <TabItem Header="StringToXamlConverter">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Style="{StaticResource NoteStyle}">
+                            <Run>This example uses 'StringToXamlConverter' and was designed for Lucene.Net as the search results are returned as:</Run>
+                            <LineBreak/>
+                            <Run FontFamily="Consolas" Background="LightGray" xml:space="preserve">    …we found that |~S~|highlighting|~E~| query |~S~|terms|~E~| made it much easier for users…</Run>
+                            <LineBreak/>
+                            <Run>Therefore the SourceText must have the |~S~| start and |~E~| end delimiters already in the SourceText, so this example is bound to the 'DelimitedText' property.</Run>
+                            <LineBreak/>
+                            <Run>NOTE: This example builds the Xaml as a string and then uses System.Windows.Markup.XamlReader.Load() to highlight the text.</Run>
+                        </TextBlock>
+
+                        <Border Grid.Row="1" Style="{StaticResource TextBorderStyle}">
+                            <ContentControl Content="{Binding DelimitedText, Converter={StaticResource StringToXamlConverter}, Mode=OneWay}">
+                                <ContentControl.Resources>
+                                    <Style x:Key="highlight" TargetType="Run">
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </Style>
+                                </ContentControl.Resources>
+                            </ContentControl>
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Attached Property">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Style="{StaticResource NoteStyle}">
+                            <Run>This example uses 'HighlightTermAttachedProperty' attached to a TextBlock:</Run>
+                            <LineBreak/>
+                            <Run FontFamily="Consolas" Background="LightGray" xml:space="preserve">    &lt;TextBlock Text=&quot;{Binding SourceText}&quot;
+               local:HighlightTerm.Text=&quot;{Binding SourceText}&quot;
+               local:HighlightTerm.HighlightText=&quot;{Binding HighlightText}&quot;/&gt;</Run>
+                        </TextBlock>
+
+                        <Border Grid.Row="1" Style="{StaticResource TextBorderStyle}">
+                            <TextBlock
+                                Text="{Binding SourceText}"
+                                TextWrapping="WrapWithOverflow"
+                                local:HighlightTerm.Text="{Binding SourceText}"
+                                local:HighlightTerm.HighlightText="{Binding HighlightText}"
+                                />
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Behavior">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Style="{StaticResource NoteStyle}">
+                            <Run>This example uses 'HighlightTermBehavior' derived from Microsoft.Xaml.Behaviors.Behavior&lt;TextBlock&gt; to attach to a TextBlock:</Run>
+                            <LineBreak/>
+                            <Run FontFamily="Consolas" Background="LightGray" xml:space="preserve">    &lt;TextBlock Text=&quot;{Binding SourceText}&quot;&gt;
+        &lt;behaviors:Interaction.Behaviors&gt;
+            &lt;local:HighlightTextBehavior HighlightText=&quot;{Binding HighlightText}&quot;/&gt;
+        &lt;/behaviors:Interaction.Behaviors&gt;
+    &lt;/TextBlock&gt;</Run>
+                            <LineBreak/>
+                            <Run>NOTE: There is an issue in the DataGrid example and the behavior is not applied initially, but when the 'HighlightText' is changed then the DataGrid rows are updated.</Run>
+                        </TextBlock>
+
+                        <Border Grid.Row="1" Style="{StaticResource TextBorderStyle}">
+                            <TextBlock
+                                Text="{Binding SourceText}"
+                                TextWrapping="WrapWithOverflow"
+                                >
+                                <behaviors:Interaction.Behaviors>
+                                    <local:HighlightTextBehavior HighlightText="{Binding HighlightText}"/>
+                                </behaviors:Interaction.Behaviors>
+                            </TextBlock>
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="HighlightingTextBlock">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Style="{StaticResource NoteStyle}">
+                            <Run>This example uses the control 'HighlightingTextBlock' from https://github.com/deanchalk/SearchMatchTextblock</Run>
+                            <LineBreak/>
+                            <Run FontFamily="Consolas" Background="LightGray" xml:space="preserve">    &lt;local:HighlightingTextBlock
+        Text=&quot;{Binding SourceText}&quot;
+        HighlightText=&quot;{Binding HighlightText}&quot;
+        HighlightBackground=&quot;Yellow&quot;
+        HighlightForeground=&quot;Black&quot;
+        TextWrapping=&quot;WrapWithOverflow&quot;
+        /&gt;</Run>
+                            <LineBreak/>
+                            <Run>NOTE: Not working yet... probably due to Theming/ResourceDictionary issues...</Run>
+                        </TextBlock>
+
+                        <Border Grid.Row="1" Style="{StaticResource TextBorderStyle}">
+                            <local:HighlightingTextBlock
+                                Text="{Binding SourceText}"
+                                HighlightText="{Binding HighlightText}"
+                                HighlightBackground="Yellow"
+                                HighlightForeground="Black"
+                                TextWrapping="WrapWithOverflow"
+                                />
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="FlowDocument">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Style="{StaticResource NoteStyle}">
+                        <Run>This example uses 'FlowDocument' to highlight the search term in the helper class 'FlowDocumentHighlighter'</Run>
+                        <LineBreak/>
+                        <Run>NOTE: The highlighter is not marking the correct offset on repeated matches.</Run>
+                    </TextBlock>
+
+                    <FlowDocumentReader
+                        x:Name="flowDocViewer"
+                        Grid.Row="1"
+                        Document="{Binding Document}"
+                        IsTwoPageViewEnabled="False"
+                        ViewingMode="Scroll"
+                        Zoom="100"
+                        />
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="DataGrid">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Style="{StaticResource NoteStyle}">
+                        <Run>This example uses the Attached Property and Behavior in two different columns using DataGridTemplateColumn in a DataGrid, where the words are split by white space and turned into rows.</Run>
+                        <LineBreak/>
+                        <Run>NOTE: The attached property is working correctly, but the behavior is not applied on load but will update when the highlight/search term is changed.</Run>
+                    </TextBlock>
+
+                    <DataGrid
+                        x:Name="MyDataGrid"
+                        Grid.Row="1"
+                        AutoGenerateColumns="False"
+                        IsReadOnly="True"
+                        HorizontalGridLinesBrush="LightGray"
+                        VerticalGridLinesBrush="LightGray"
+                        ItemsSource="{Binding Items}"
+                        >
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Index" Binding="{Binding Index}" SortDirection="Ascending" Width="Auto"/>
+                            <DataGridTemplateColumn Header="Text (Behavior)" Width="Auto" IsReadOnly="True" SortMemberPath="Text">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock
+                                            Text="{Binding Text}"
+                                            TextWrapping="WrapWithOverflow"
+                                            >
+                                            <behaviors:Interaction.Behaviors>
+                                                <local:HighlightTextBehavior HighlightText="{Binding DataContext.HighlightText, Source={StaticResource ProxyElement}}"/>
+                                            </behaviors:Interaction.Behaviors>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Text (AP)" Width="Auto" IsReadOnly="True" SortMemberPath="Text">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock
+                                            Text="{Binding Text}"
+                                            TextWrapping="WrapWithOverflow"
+                                            local:HighlightTerm.Text="{Binding Text}"
+                                            local:HighlightTerm.HighlightText="{Binding DataContext.HighlightText, Source={StaticResource ProxyElement}}"
+                                            />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Source Text">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Style="{StaticResource NoteStyle}">
+                            <Run>This is the source text used for the examples. You can modify the text at runtime for testing.</Run>
+                            <LineBreak/>
+                            <Run>NOTE: The SourceText uses a delay in the binding: </Run>
+                            <Run FontFamily="Consolas" Background="LightGray" xml:space="preserve"> &lt;TextBox Text=&quot;{Binding SourceText, UpdateSourceTrigger=PropertyChanged, Delay=3000}&quot;/&gt;</Run>
+                        </TextBlock>
+
+                        <TextBox
+                            Grid.Row="1"
+                            AcceptsReturn="True"
+                            AcceptsTab="True"
+                            TextWrapping="WrapWithOverflow"
+                            VerticalScrollBarVisibility="Auto"
+                            Text="{Binding SourceText, UpdateSourceTrigger=PropertyChanged, Delay=3000}"
+                            />
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>
