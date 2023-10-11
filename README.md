@@ -8,9 +8,8 @@ I prefer to use bevahiors derived from `Microsoft.Xaml.Behaviors.Behavior`, so I
 
 ## Known Bugs
 
-1. The bevahior does not properly highlight the rows in the `DataGrid` until the `HighlightText` is changed.
-2. The `FlowDocumentHighlighter` is not highlighting the correct offset after the initial match.
-3. `HighlightingTextBlock` is not working probably due to Theming/ResourceDictionary issues
+1. The `FlowDocumentHighlighter` is not highlighting the correct offset after the initial match.
+2. `HighlightingTextBlock` is not working probably due to Theming/ResourceDictionary issues
 
 ## TODO
 

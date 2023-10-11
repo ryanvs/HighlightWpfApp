@@ -8,13 +8,24 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Media;
 
 namespace HighlightWpfApp
 {
     public class HighlightTextBehavior : Behavior<TextBlock>
     {
-        private volatile bool _isTextChanging;
-        private volatile bool _pendingTextChanged;
+        public string SourceText
+        {
+            get { return (string)GetValue(SourceTextProperty); }
+            set { SetValue(SourceTextProperty, value); }
+        }
+
+        public static readonly DependencyProperty SourceTextProperty =
+            DependencyProperty.Register(
+                nameof(SourceText),
+                typeof(string),
+                typeof(HighlightTextBehavior),
+                new FrameworkPropertyMetadata(string.Empty, OnTextChanged));
 
 
         public string HighlightText
@@ -47,61 +58,7 @@ namespace HighlightWpfApp
         protected override void OnAttached()
         {
             base.OnAttached();
-
-            // Fire an event to highlight when control is attached/data bound
-            OnTextChanged(this, new DependencyPropertyChangedEventArgs());
-
-            // Attach to get Text changes
-            if (this.AssociatedObject != null)
-            {
-                // When Text changes it throws System.ExecutionEngineException: Exception of type 'System.ExecutionEngineException' was thrown.
-                // Intentionally disabled for now...
-                var descriptor = DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock));
-                descriptor.AddValueChanged(this.AssociatedObject, TextBlockChanged);
-            }
-        }
-
-        protected override void OnDetaching()
-        {
-            if (this.AssociatedObject != null)
-            {
-                var descriptor = DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock));
-                descriptor.RemoveValueChanged(this.AssociatedObject, TextBlockChanged);
-            }
-
-            base.OnDetaching();
-        }
-
-        private void TextBlockChanged(object sender, EventArgs e)
-        {
-            if (_isTextChanging)
-            {
-                Debug.WriteLine("TextBlockChanged: EXITING _isTextChanging = true");
-                return;
-            }
-
-            var dispatcher = this.AssociatedObject?.Dispatcher;
-            if (dispatcher != null)
-            {
-                _pendingTextChanged = true;
-                Debug.WriteLine("TextBlockChanged: DELAYING _pendingTextChanged = true");
-
-                dispatcher.BeginInvoke(
-                    (Action)(() =>
-                    { 
-                        if (_pendingTextChanged)
-                        {
-                            Debug.WriteLine("TextBlockChanged: EXEC _pendingTextChanged = true");
-                            OnTextChanged();
-                        }
-                        else
-                        {
-                            Debug.WriteLine("TextBlockChanged: SKIPPED _pendingTextChanged = false");
-                        }
-                    }),
-                    System.Windows.Threading.DispatcherPriority.Normal,
-                    null);
-            }
+            this.OnTextChanged();
         }
 
         private void OnTextChanged()
@@ -109,24 +66,11 @@ namespace HighlightWpfApp
             var textBlock = this.AssociatedObject;
             if (textBlock != null)
             {
-                string text = textBlock.Text;
+                string text = this.SourceText;
                 string highlightText = this.HighlightText;
                 var comparison = this.HighlightComparision;
 
-                // BUG: This causes changes to SourceText to be missed. There is still
-                // a bug in normal usage, but it will update when HighlightText changes
-                if (_isTextChanging)
-                {
-                    Debug.WriteLine("OnTextChanged: SKIPPED _isTextChanging = true");
-                    return;
-                }
-
-                _isTextChanging = true;
-                Debug.WriteLine("OnTextChanged: EXEC _isTextChanging = true");
                 SetTextBlockTextAndHighlightTerm(textBlock, text, highlightText, comparison);
-                _isTextChanging = false;
-                _pendingTextChanged = false;
-                Debug.WriteLine("OnTextChanged: FINISHED _isTextChanging = false");
             }
         }
 
@@ -138,11 +82,6 @@ namespace HighlightWpfApp
             }
         }
 
-        public static string GetText(FrameworkElement frameworkElement)
-        {
-            return (string)frameworkElement.GetValue(TextBlock.TextProperty);
-        }
-
         public static StringComparison GetHighlightComparision(FrameworkElement frameworkElement)
         {
             return (StringComparison)frameworkElement.GetValue(HighlightComparisionProperty);
@@ -150,6 +89,7 @@ namespace HighlightWpfApp
 
         private static void SetTextBlockTextAndHighlightTerm(TextBlock textBlock, string text, string highlightText, StringComparison comparison)
         {
+            textBlock.SetValue(TextBlock.TextProperty, text);
             textBlock.Inlines.Clear();
 
             if (TextIsEmpty(text))
@@ -159,7 +99,7 @@ namespace HighlightWpfApp
             {
                 AddTextToTextBlock(textBlock, text);
             }
-            else if (TextIsNotContainingTermToBeHighlighted(text, highlightText, comparison))
+            else if (TextDoesNotContainTermToHighlight(text, highlightText, comparison))
             {
                 AddPartToTextBlock(textBlock, text);
             }
@@ -173,12 +113,12 @@ namespace HighlightWpfApp
 
         private static bool TextIsEmpty(string text)
         {
-            return text.Length == 0;
+            return string.IsNullOrEmpty(text);
         }
 
-        private static bool TextIsNotContainingTermToBeHighlighted(string text, string termToBeHighlighted, StringComparison comparison)
+        private static bool TextDoesNotContainTermToHighlight(string text, string termToBeHighlighted, StringComparison comparison)
         {
-            return text.IndexOf(termToBeHighlighted, comparison) < 0;
+            return text == null || text.IndexOf(termToBeHighlighted, comparison) < 0;
         }
 
         private static void AddPartToTextBlockAndHighlightIfNecessary(TextBlock textBlock, string termToBeHighlighted, string textPart, StringComparison comparison)
@@ -199,11 +139,12 @@ namespace HighlightWpfApp
             textBlock.Inlines.Add(new Run { Text = part, FontWeight = FontWeights.Light });
         }
 
+        private static readonly SolidColorBrush YellowBrush = new SolidColorBrush(Colors.Yellow);
+
         private static void AddHighlightedPartToTextBlock(TextBlock textBlock, string part)
         {
-            textBlock.Inlines.Add(new Run { Text = part, FontWeight = FontWeights.ExtraBold });
+            textBlock.Inlines.Add(new Run { Text = part, FontWeight = FontWeights.Bold, Background = YellowBrush });
         }
-
 
         public static List<string> SplitTextIntoTermAndNotTermParts(string text, string term, StringComparison comparison)
         {

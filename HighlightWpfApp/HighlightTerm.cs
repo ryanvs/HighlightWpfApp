@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Media;
 
 namespace HighlightWpfApp
 {
@@ -127,9 +128,11 @@ namespace HighlightWpfApp
             textBlock.Inlines.Add(new Run { Text = part, FontWeight = FontWeights.Light });
         }
 
+        private static readonly SolidColorBrush YellowBrush = new SolidColorBrush(Colors.Yellow);
+
         private static void AddHighlightedPartToTextBlock(TextBlock textBlock, string part)
         {
-            textBlock.Inlines.Add(new Run { Text = part, FontWeight = FontWeights.ExtraBold });
+            textBlock.Inlines.Add(new Run { Text = part, FontWeight = FontWeights.Bold, Background = YellowBrush });
         }
 
         public static List<string> SplitTextIntoTermAndNotTermParts(string text, string term, StringComparison comparison)

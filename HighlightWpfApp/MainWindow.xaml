@@ -70,14 +70,16 @@
                             <LineBreak/>
                             <Run>Therefore the SourceText must have the |~S~| start and |~E~| end delimiters already in the SourceText, so this example is bound to the 'DelimitedText' property.</Run>
                             <LineBreak/>
-                            <Run>NOTE: This example builds the Xaml as a string and then uses System.Windows.Markup.XamlReader.Load() to highlight the text.</Run>
+                            <Run>NOTE: This example builds the Xaml as a string and then uses System.Windows.Markup.XamlReader.Load() to highlight the text. Also, there must be a 'highlight' style (TargetType="Run") to stylize the text.</Run>
                         </TextBlock>
 
                         <Border Grid.Row="1" Style="{StaticResource TextBorderStyle}">
                             <ContentControl Content="{Binding DelimitedText, Converter={StaticResource StringToXamlConverter}, Mode=OneWay}">
                                 <ContentControl.Resources>
+                                    <!-- This stylizes the highlight text in the TextBlock -->
                                     <Style x:Key="highlight" TargetType="Run">
                                         <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="Background" Value="Yellow"/>
                                     </Style>
                                 </ContentControl.Resources>
                             </ContentControl>
@@ -125,22 +127,18 @@
                         <TextBlock Grid.Row="0" Style="{StaticResource NoteStyle}">
                             <Run>This example uses 'HighlightTermBehavior' derived from Microsoft.Xaml.Behaviors.Behavior&lt;TextBlock&gt; to attach to a TextBlock:</Run>
                             <LineBreak/>
-                            <Run FontFamily="Consolas" Background="LightGray" xml:space="preserve">    &lt;TextBlock Text=&quot;{Binding SourceText}&quot;&gt;
+                            <Run FontFamily="Consolas" Background="LightGray" xml:space="preserve">    &lt;TextBlock&gt;
         &lt;behaviors:Interaction.Behaviors&gt;
-            &lt;local:HighlightTextBehavior HighlightText=&quot;{Binding HighlightText}&quot;/&gt;
+            &lt;local:HighlightTextBehavior SourceText=&quot;{Binding SourceText}&quot; HighlightText=&quot;{Binding HighlightText}&quot;/&gt;
         &lt;/behaviors:Interaction.Behaviors&gt;
     &lt;/TextBlock&gt;</Run>
-                            <LineBreak/>
-                            <Run>NOTE: There is an issue in the DataGrid example and the behavior is not applied initially, but when the 'HighlightText' is changed then the DataGrid rows are updated.</Run>
                         </TextBlock>
 
                         <Border Grid.Row="1" Style="{StaticResource TextBorderStyle}">
-                            <TextBlock
-                                Text="{Binding SourceText}"
-                                TextWrapping="WrapWithOverflow"
+                            <TextBlock TextWrapping="WrapWithOverflow"
                                 >
                                 <behaviors:Interaction.Behaviors>
-                                    <local:HighlightTextBehavior HighlightText="{Binding HighlightText}"/>
+                                    <local:HighlightTextBehavior SourceText="{Binding SourceText}" HighlightText="{Binding HighlightText}"/>
                                 </behaviors:Interaction.Behaviors>
                             </TextBlock>
                         </Border>
@@ -167,7 +165,7 @@
         TextWrapping=&quot;WrapWithOverflow&quot;
         /&gt;</Run>
                             <LineBreak/>
-                            <Run>NOTE: Not working yet... probably due to Theming/ResourceDictionary issues...</Run>
+                            <Run>NOTE: Not working yet due to Theming/ResourceDictionary issues. OnApplyTemplate() is never called.</Run>
                         </TextBlock>
 
                         <Border Grid.Row="1" Style="{StaticResource TextBorderStyle}">
@@ -216,8 +214,6 @@
 
                     <TextBlock Grid.Row="0" Style="{StaticResource NoteStyle}">
                         <Run>This example uses the Attached Property and Behavior in two different columns using DataGridTemplateColumn in a DataGrid, where the words are split by white space and turned into rows.</Run>
-                        <LineBreak/>
-                        <Run>NOTE: The attached property is working correctly, but the behavior is not applied on load but will update when the highlight/search term is changed.</Run>
                     </TextBlock>
 
                     <DataGrid
@@ -234,12 +230,9 @@
                             <DataGridTemplateColumn Header="Text (Behavior)" Width="Auto" IsReadOnly="True" SortMemberPath="Text">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock
-                                            Text="{Binding Text}"
-                                            TextWrapping="WrapWithOverflow"
-                                            >
+                                        <TextBlock TextWrapping="WrapWithOverflow">
                                             <behaviors:Interaction.Behaviors>
-                                                <local:HighlightTextBehavior HighlightText="{Binding DataContext.HighlightText, Source={StaticResource ProxyElement}}"/>
+                                                <local:HighlightTextBehavior SourceText="{Binding Text}" HighlightText="{Binding DataContext.HighlightText, Source={StaticResource ProxyElement}}"/>
                                             </behaviors:Interaction.Behaviors>
                                         </TextBlock>
                                     </DataTemplate>
